@@ -13,12 +13,20 @@ function Invoke-GithubCodeSearch {
 
         [Parameter()]
         [string]
-        $Repository,
+        $Repo,
 
         [Parameter()]
-        [validateset('C#', 'JavaScript', 'Go', 'PowerShell')] # TODO; other languages
+        [ValidateSet('C#', 'JavaScript', 'Go', 'PowerShell')] # TODO; other languages
         [string]
-        $Language
+        $Language,
+
+        [Parameter()]
+        [int]
+        $PerPage = 20,
+
+        [Parameter()]
+        [int]
+        $Page = 1
     )
 
     begin {
@@ -32,14 +40,15 @@ function Invoke-GithubCodeSearch {
         $searchParameters = @{
             Text = $Text
             Language = $Language
-            Repository = $Repository
+            Repo = $Repo
             Org = $Org
+            PerPage = $PerPage
+            Page = $Page
         }
         $uri = "https://api.github.com/search/code?{0}" -f (Get-GithubCodeSearchQueryString @searchParameters)
 
         $results = Invoke-RestMethod -Uri $uri -Headers $headers
 
-        # TODO: paging of results
         $results.items | ForEach-Object {
             $matches = $_.text_matches | ForEach-Object { $_.fragment }
 
@@ -51,19 +60,36 @@ function Invoke-GithubCodeSearch {
     }
 }
 
-function Get-GithubCodeSearchQueryString($Text, $Org, $Repository, $Language) {
+function Get-GithubCodeSearchQueryString {
+    param (
+        $Text,
+        $Org,
+        $Repo,
+        $Language,
+        $PerPage,
+        $Page
+    )
+
     $query = "q=$Text"
 
     if ($Org) {
         $query += "+org:$Org"
     }
 
-    if ($Repository) {
-        $query += "+repo:$Repository"
+    if ($Repo) {
+        $query += "+repo:$Repo"
     }
 
     if ($Language) {
-        $query += "+language:{0}" -f [Uri]::EscapeDataString($Language) # 'C#' must be escaped
+        $query += '+language:{0}' -f [Uri]::EscapeDataString($Language) # 'C#' must be escaped
+    }
+
+    if ($PerPage) {
+        $query += "&per_page=$PerPage"
+    }
+
+    if ($Page) {
+        $query += "&page=$Page"
     }
 
     $query

@@ -10,7 +10,7 @@ Describe 'Get-GithubCodeSearchQueryString' {
     }
 
     It 'includes the repository if specified' {
-        Get-GithubCodeSearchQueryString -Text 'goto' -Repository 'ocp/ed209' | Should -Be 'q=goto+repo:ocp/ed209'
+        Get-GithubCodeSearchQueryString -Text 'goto' -Repo 'ocp/ed209' | Should -Be 'q=goto+repo:ocp/ed209'
     }
 
     It 'includes the language if specified' {
@@ -19,5 +19,9 @@ Describe 'Get-GithubCodeSearchQueryString' {
 
     It 'URI-escapes the language' {
         Get-GithubCodeSearchQueryString -Text 'goto' -Language 'binary#' | Should -Be 'q=goto+language:binary%23'
+    }
+
+    It 'sets the paging if specified' {
+        Get-GithubCodeSearchQueryString -Text 'goto' -PerPage 20 -Page 10 | Should -Be 'q=goto&per_page=20&page=10'
     }
 }

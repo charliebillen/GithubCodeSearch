@@ -1,13 +1,17 @@
 . $PSScriptRoot\..\Src\QueryInvocation.ps1
 
 Describe 'Invoke-GithubCodeSearch.Tests' {
-    $searchText = 'break'
-    $language = 'C#'
-    $repository = 'ocp/ed209'
-    $org = 'ocp'
+    $searchParameters = @{
+        Text = 'break'
+        Language = 'C#'
+        Repo = 'ocp/ed209'
+        Org = 'ocp'
+        PerPage = 10
+        Page = 20
+    }
 
     $basicAuthenticationToken = 'xyzzy'
-    $queryString = 'q=(>^ ^)>'
+    $queryString = 'q=(>^ ^)>?'
 
     $mockResponse = [pscustomobject]@{
         items = @(
@@ -21,7 +25,7 @@ Describe 'Invoke-GithubCodeSearch.Tests' {
             [pscustomobject]@{
                 html_url = 'http://result2.url'
                 text_matches = @(
-                    [pscustomobject]@{ fragment = '// this breaks the build'}
+                    [pscustomobject]@{ fragment = '// this breaks the build' }
                 )
             }
         )
@@ -31,10 +35,12 @@ Describe 'Invoke-GithubCodeSearch.Tests' {
         Mock Get-GithubCodeSearchToken { $basicAuthenticationToken } -Verifiable
 
         Mock Get-GithubCodeSearchQueryString { $queryString } -Verifiable -ParameterFilter {
-            $Text -eq $searchText -and `
-            $Language -eq $language -and `
-            $Repository -eq $repository -and `
-            $Org -eq $org
+            $Text -eq $searchParameters.Text -and `
+            $Language -eq $searchParameters.Language -and `
+            $Repo -eq $searchParameters.Repo -and `
+            $Org -eq $searchParameters.Org -and `
+            $PerPage -eq $searchParameters.PerPage -and `
+            $Page -eq $searchParameters.Page
         }
 
         Mock Invoke-RestMethod { $mockResponse } -Verifiable -ParameterFilter {
@@ -45,26 +51,12 @@ Describe 'Invoke-GithubCodeSearch.Tests' {
     }
 
     It 'builds up a the expected request' {
-        $searchParameters = @{
-            Text = $searchText
-            Language = $language
-            Repository = $repository
-            Org = $org
-        }
-
         Invoke-GithubCodeSearch @searchParameters
 
         Assert-VerifiableMock
     }
 
     it 'returns the URLs for matches' {
-        $searchParameters = @{
-            Text = $searchText
-            Language = $language
-            Repository = $repository
-            Org = $org
-        }
-
         $results = Invoke-GithubCodeSearch @searchParameters
 
         $results[0].URL | Should -Be 'http://result1.url'
@@ -72,13 +64,6 @@ Describe 'Invoke-GithubCodeSearch.Tests' {
     }
 
     it 'returns the matching text fragments' {
-        $searchParameters = @{
-            Text = $searchText
-            Language = $language
-            Repository = $repository
-            Org = $org
-        }
-
         $results = Invoke-GithubCodeSearch @searchParameters
 
         $results[0].Matches | Should -Be @('break;', 'break;')

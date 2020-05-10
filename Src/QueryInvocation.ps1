@@ -122,10 +122,10 @@ function Invoke-GithubCodeSearch {
         $results = Invoke-RestMethod -Uri $uri -Headers $headers
 
         $results.items | ForEach-Object {
-            $matches = $_.text_matches | ForEach-Object { $_.fragment }
+            $textMatches = $_.text_matches | ForEach-Object { $_.fragment }
 
             [pscustomobject]@{
-                Matches = $matches
+                Matches = $textMatches
                 URL = $_.html_url
             }
         }
